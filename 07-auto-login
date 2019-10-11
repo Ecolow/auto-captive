@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#--------------------------
+# By Sylvain Kerleroux
+# Last update: Oct 8, 2019
+# Version: 1
+# Description: Runs corresponding python script located in /etc/NetworkManager/auto-login
+#	       when connection is up on public wifi. Procedes to connect VPN.
+#---------------------------
+
+export LC_ALL=C
+LogFile="/var/log/07-auto-login.log"
+
+# The parameters that get passed to the script are:
+# $1 = The interface name ( eth0, wlan0 ...etc)
+# $2 = Interface status ( "up" or "down" )
+# Check if wireless status is up
+# I have two wifi cards in my laptop, named "wlan0 and wlan1"
+# so I use regular expression "wlan[01]" to match both of them.
+echo "$1 $2" >> /etc/NetworkManager/dispatcher.d/test.txt
+if [ $2 = "up" ]&&[ $1 = "wlp4s0" ]; then
+    # Get the SSID from "iwconfig" or (can also locate the network based on IP or MAC address if needed)
+    ESSID=$(iwconfig "$1" | grep ESSID | cut -d'"' -f2)
+    # Record the date and time for debugging purposes only
+    echo "[`date`] ESSID=($ESSID)" >> $LogFile
+    # If the wireless name matches a login script in /etc/NetworkManager/auto-login then run its python script
+    for file in /etc/NetworkManager/auto-login/*
+    do    
+	if [ $ESSID = $(basename $file .py) ]; then
+	    python3 $file 1 >> $LogFile 2>&1
+        fi
+    done
+fi
+
+#If you want to do somehting when the network is down
+#if [[ "$1" =~ wlan[01] && $2 == "down" ]]; then
+#fi
+
