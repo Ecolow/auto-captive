@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh -e
 
 #--------------------------
 # By Sylvain Kerleroux
@@ -14,11 +14,8 @@ LogFile="/var/log/07-auto-login.log"
 # The parameters that get passed to the script are:
 # $1 = The interface name ( eth0, wlan0 ...etc)
 # $2 = Interface status ( "up" or "down" )
-# Check if wireless status is up
-# I have two wifi cards in my laptop, named "wlan0 and wlan1"
-# so I use regular expression "wlan[01]" to match both of them.
-echo "$1 $2" >> /etc/NetworkManager/dispatcher.d/test.txt
-if [ $2 = "up" ]&&[ $1 = "wlp4s0" ]; then
+echo "$1, $2" >> $LogFile
+if [ $2 = "up" ]&&[ "$1" = "wlp4s0" ]; then
     # Get the SSID from "iwconfig" or (can also locate the network based on IP or MAC address if needed)
     ESSID=$(iwconfig "$1" | grep ESSID | cut -d'"' -f2)
     # Record the date and time for debugging purposes only
@@ -27,7 +24,8 @@ if [ $2 = "up" ]&&[ $1 = "wlp4s0" ]; then
     for file in /etc/NetworkManager/auto-login/*
     do    
 	if [ $ESSID = $(basename $file .py) ]; then
-	    python3 $file 1 >> $LogFile 2>&1
+	    sudo -u echologic python3 $file 1 >> $LogFile 2>&1
+
         fi
     done
 fi
